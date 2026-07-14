@@ -1,0 +1,6 @@
+﻿.vercel
+node_modules
+dist
+*.zip
+sea-cret-guard-react-fixed
+.DS_Store
