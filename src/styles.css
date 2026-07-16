@@ -184,6 +184,18 @@ button {
   background: linear-gradient(#b9ecff 0 25%, #72d4f3 25% 100%);
 }
 
+.map-view::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  height: 78px;
+  background: #082a5c;
+  pointer-events: none;
+}
+
 .hero {
   min-height: 142px;
   display: flex;
@@ -1415,6 +1427,7 @@ button {
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 20;
   height: 76px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);

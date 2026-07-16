@@ -149,8 +149,10 @@ function App() {
 
   const completedBaseCount = sectors.filter((sector) => completed.includes(sector.id)).length;
   const totalPoints = calculatePoints(completed);
-  const participation = Math.min(100, completed.length * 20);
-  const participants = Math.min(2500, 1300 + completed.length * 240);
+  const registeredUsers = readJson(accountsKey, []);
+  const participantGoal = 50;
+  const participants = Math.max(registeredUsers.length, user ? 1 : 0);
+  const participation = Math.min(100, (participants / participantGoal) * 100);
 
   const handleAuth = () => {
     const inputName = name.trim();
@@ -220,10 +222,10 @@ function App() {
 
   return (
     <PhoneShell>
-      {screen === 'map' && <MapScreen {...{ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants }} />}
+      {screen === 'map' && <MapScreen {...{ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants, participantGoal }} />}
       {screen === 'game' && <GameScreen key={activeSector.id} sector={activeSector} onComplete={() => completeMission(activeSector.id)} onBack={() => setScreen('map')} />}
       {screen === 'complete' && <MissionCompleteScreen sector={clearedSector} onDone={() => setScreen(clearedSector?.id === 'central' ? 'certificate' : 'map')} />}
-      {screen === 'certificate' && <CertificateScreen {...{ user, participation, participants }} />}
+      {screen === 'certificate' && <CertificateScreen {...{ user, participation, participants, participantGoal }} />}
       {screen === 'profile' && <ProfileScreen {...{ user, completed, totalPoints, resetRecord, logout }} />}
       {screen === 'leaderboard' && <LeaderboardScreen {...{ user, completed }} />}
       {screen === 'badges' && <BadgesScreen completed={completed} />}
@@ -275,7 +277,7 @@ function AuthScreen({ authTab, setAuthTab, name, setName, password, setPassword,
   );
 }
 
-function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants }) {
+function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants, participantGoal }) {
   const finalOpen = sectors.every((sector) => completed.includes(sector.id));
   return (
     <div className="map-view">
@@ -294,7 +296,7 @@ function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, s
         </div>
         <strong>{totalPoints.toLocaleString()} P</strong>
       </section>
-      <ParticipationCard participation={participation} participants={participants} />
+      <ParticipationCard participation={participation} participants={participants} participantGoal={participantGoal} />
       {notice && <div className="toast">✅ {notice}</div>}
       <section className="sea-map">
         <KoreaMissionMap />
@@ -349,18 +351,18 @@ function MissionCard({ sector, locked, done, onStart }) {
   );
 }
 
-function ParticipationCard({ participation, participants }) {
+function ParticipationCard({ participation, participants, participantGoal }) {
   const complete = participation >= 100;
   return (
     <section className="participation-card">
       <div>
         <strong>{complete ? '아치 찾기 성공!' : 'SEA-CRET 참여도'}</strong>
-        <span>{participants.toLocaleString()} / 2,500명 참여</span>
+        <span>{participants.toLocaleString()} / {participantGoal.toLocaleString()}명 참여</span>
       </div>
       <div className="participation-line">
         <i style={{ width: `${participation}%` }} />
       </div>
-      <p>{complete ? '모든 미션 참여도가 채워져 아치증 발급이 가능합니다.' : '참여 인원이 차오를수록 SEA-CRET 아치 발견에 가까워집니다.'}</p>
+      <p>{complete ? '참여 인원이 모두 채워져 아치 찾기에 성공했습니다.' : '회원가입한 요원이 늘어날수록 SEA-CRET 아치 발견에 가까워집니다.'}</p>
     </section>
   );
 }
@@ -408,7 +410,7 @@ function MissionCompleteScreen({ sector, onDone }) {
   );
 }
 
-function CertificateScreen({ user, participation, participants }) {
+function CertificateScreen({ user, participation, participants, participantGoal }) {
   const [issued, setIssued] = useState(false);
   return (
     <div className="certificate-view">
@@ -417,7 +419,7 @@ function CertificateScreen({ user, participation, participants }) {
         <h1>SEA-CRET 아치증 발급받기!</h1>
         <p>{user} 요원님의 최종 SEA-CRET GUARD 인증이 준비되었습니다.</p>
       </header>
-      <ParticipationCard participation={participation} participants={participants} />
+      <ParticipationCard participation={participation} participants={participants} participantGoal={participantGoal} />
       {!issued ? (
         <button className="issue-button" onClick={() => setIssued(true)}>SEA-CRET 아치증 발급받기!</button>
       ) : (
