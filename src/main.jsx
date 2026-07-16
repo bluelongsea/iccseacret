@@ -386,15 +386,15 @@ function AuthScreen({ authTab, setAuthTab, name, setName, password, setPassword,
             <span className="channel-logo home-logo"><Anchor size={15} /></span>
             <span>해양경찰청 홈페이지</span>
           </a>
-          <a href="https://www.instagram.com/korea_coast_guard/" target="_blank" rel="noreferrer">
+          <a href="https://www.instagram.com/kcgnmpa/?hl=ko" target="_blank" rel="noreferrer">
             <span className="channel-logo instagram-logo">◎</span>
             <span>해양경찰청 인스타그램</span>
           </a>
-          <a href="https://blog.naver.com/kcgpr" target="_blank" rel="noreferrer">
+          <a href="https://m.blog.naver.com/PostList.naver?blogId=kcgnmpa&tab=1" target="_blank" rel="noreferrer">
             <span className="channel-logo blog-logo">B</span>
             <span>해양경찰청 블로그</span>
           </a>
-          <a href="https://www.youtube.com/@koreacoastguard" target="_blank" rel="noreferrer">
+          <a href="https://www.youtube.com/channel/UCl6GW0nhB6UIL05h2oF3vRA" target="_blank" rel="noreferrer">
             <span className="channel-logo youtube-logo">▶</span>
             <span>해양경찰청 유튜브</span>
           </a>
