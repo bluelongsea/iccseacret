@@ -85,6 +85,7 @@ const accountsKey = 'sea-cret-guard-accounts';
 const sessionKey = 'sea-cret-guard-user';
 const recordKey = 'sea-cret-guard-game-record';
 const publicUrl = 'https://iccsecretguard.vercel.app';
+const participantGoal = 100;
 
 function calculatePoints(completedMissions = []) {
   const completedBaseCount = sectors.filter((sector) => completedMissions.includes(sector.id)).length;
@@ -101,6 +102,34 @@ function readJson(key, fallback) {
 
 function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function buildPublicRanking(accounts = [], currentUser, currentCompleted = []) {
+  return accounts
+    .map((account) => {
+      const missions = account.name === currentUser ? currentCompleted : Array.isArray(account.completed) ? account.completed : [];
+      return {
+        name: account.name,
+        points: calculatePoints(missions),
+        missionCount: missions.length,
+        completed: missions,
+        current: account.name === currentUser,
+      };
+    })
+    .sort((a, b) => b.points - a.points || b.missionCount - a.missionCount || a.name.localeCompare(b.name, 'ko'));
+}
+
+async function requestLeaderboard(action, payload = {}) {
+  const response = await fetch('/api/leaderboard', {
+    method: action === 'list' ? 'GET' : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: action === 'list' ? undefined : JSON.stringify({ action, ...payload }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) {
+    throw new Error(data.error || '공용 랭킹 서버에 연결할 수 없습니다.');
+  }
+  return data;
 }
 
 function getQrSectorId() {
@@ -126,6 +155,23 @@ function App() {
   const [clearedSector, setClearedSector] = useState(null);
   const [completed, setCompleted] = useState(savedCompleted);
   const [notice, setNotice] = useState(qrSector ? `${qrSector.office} QR로 접속했습니다.` : '');
+  const [remoteRows, setRemoteRows] = useState([]);
+  const [remoteError, setRemoteError] = useState('');
+
+  const refreshLeaderboard = async () => {
+    try {
+      const data = await requestLeaderboard('list');
+      setRemoteRows(Array.isArray(data.rows) ? data.rows : []);
+      setRemoteError('');
+    } catch (error) {
+      setRemoteRows([]);
+      setRemoteError(error.message || '공용 랭킹 저장소 연결이 필요합니다.');
+    }
+  };
+
+  useEffect(() => {
+    refreshLeaderboard();
+  }, []);
 
   useEffect(() => {
     saveJson(recordKey, completed);
@@ -134,6 +180,9 @@ function App() {
     saveJson(accountsKey, accounts.map((account) => (
       account.name === user ? { ...account, completed } : account
     )));
+    requestLeaderboard('progress', { name: user, completed })
+      .then(refreshLeaderboard)
+      .catch((error) => setRemoteError(error.message || '공용 랭킹 저장소 연결이 필요합니다.'));
   }, [completed, user]);
 
   useEffect(() => {
@@ -150,11 +199,10 @@ function App() {
   const completedBaseCount = sectors.filter((sector) => completed.includes(sector.id)).length;
   const totalPoints = calculatePoints(completed);
   const registeredUsers = readJson(accountsKey, []);
-  const participantGoal = 50;
-  const participants = Math.max(registeredUsers.length, user ? 1 : 0);
+  const participants = Math.max(remoteRows.length, registeredUsers.length, user ? 1 : 0);
   const participation = Math.min(100, (participants / participantGoal) * 100);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     const inputName = name.trim();
     const inputPassword = password.trim();
     if (!inputName || !inputPassword) {
@@ -168,20 +216,41 @@ function App() {
         setAuthMessage('이미 등록된 요원명입니다.');
         return;
       }
+      let joinRemoteError = '';
+      try {
+        await requestLeaderboard('join', { name: inputName, password: inputPassword });
+        await refreshLeaderboard();
+      } catch (error) {
+        joinRemoteError = error.message || '공용 랭킹 저장소 연결이 필요합니다.';
+        setRemoteError(joinRemoteError);
+      }
       saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: [] }]);
       setAuthTab('login');
       setName('');
       setPassword('');
-      setAuthMessage('회원가입 완료! 로그인해주세요.');
+      setAuthMessage(joinRemoteError ? '회원가입 완료! 공용 랭킹 저장소가 연결되면 전체 랭킹에 반영됩니다.' : '회원가입 완료! 로그인해주세요.');
       return;
     }
-    if (!account || account.password !== inputPassword) {
+
+    let loginAccount = account;
+    try {
+      const data = await requestLeaderboard('login', { name: inputName, password: inputPassword });
+      loginAccount = data.account;
+      await refreshLeaderboard();
+    } catch (error) {
+      setRemoteError(error.message || '공용 랭킹 저장소 연결이 필요합니다.');
+    }
+
+    if (!loginAccount || loginAccount.password && loginAccount.password !== inputPassword) {
       setAuthMessage('가입된 요원명과 비밀번호를 확인해주세요.');
       return;
     }
+    if (!account) {
+      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: loginAccount.completed || [] }]);
+    }
     sessionStorage.setItem(sessionKey, inputName);
     setUser(inputName);
-    setCompleted(Array.isArray(account.completed) ? account.completed : []);
+    setCompleted(Array.isArray(loginAccount.completed) ? loginAccount.completed : []);
     setName('');
     setPassword('');
     setScreen(qrSector ? 'game' : 'map');
@@ -227,7 +296,7 @@ function App() {
       {screen === 'complete' && <MissionCompleteScreen sector={clearedSector} onDone={() => setScreen(clearedSector?.id === 'central' ? 'certificate' : 'map')} />}
       {screen === 'certificate' && <CertificateScreen {...{ user, participation, participants, participantGoal }} />}
       {screen === 'profile' && <ProfileScreen {...{ user, completed, totalPoints, resetRecord, logout }} />}
-      {screen === 'leaderboard' && <LeaderboardScreen {...{ user, completed }} />}
+      {screen === 'leaderboard' && <LeaderboardScreen {...{ user, completed, remoteRows, remoteError }} />}
       {screen === 'badges' && <BadgesScreen completed={completed} />}
       {screen === 'notice' && <NoticeScreen />}
       {screen === 'qr' && <QrScreen />}
@@ -849,24 +918,25 @@ function ProfileScreen({ user, completed, totalPoints, resetRecord, logout }) {
   );
 }
 
-function LeaderboardScreen({ user, completed }) {
+function LeaderboardScreen({ user, completed, remoteRows, remoteError }) {
   const accounts = readJson(accountsKey, []);
-  const rows = accounts
-    .map((account) => {
-      const missions = account.name === user ? completed : Array.isArray(account.completed) ? account.completed : [];
-      return {
-        name: account.name,
-        points: calculatePoints(missions),
-        missionCount: missions.length,
-        current: account.name === user,
-      };
-    })
+  const localRows = buildPublicRanking(accounts, user, completed);
+  const rows = (remoteRows && remoteRows.length > 0 ? remoteRows : localRows)
+    .map((row) => ({
+      ...row,
+      current: row.name === user,
+    }))
     .sort((a, b) => b.points - a.points || b.missionCount - a.missionCount || a.name.localeCompare(b.name, 'ko'));
 
   return (
     <div className="simple-view">
       <h1><Trophy /> 랭킹</h1>
-      <p className="leaderboard-note">가입한 모든 요원의 미션 기록을 기준으로 표시됩니다.</p>
+      <p className="leaderboard-note">공용 랭킹 저장소에 등록된 모든 요원의 미션 기록을 기준으로 표시됩니다.</p>
+      {remoteError && (
+        <div className="retry-hint">
+          공용 랭킹 저장소 연결이 필요합니다. 현재는 이 기기에 저장된 요원만 표시됩니다.
+        </div>
+      )}
       {rows.length === 0 && <div className="retry-hint">아직 가입한 요원이 없습니다.</div>}
       {rows.map((row, index) => (
         <div className={`rank-row ${row.current ? 'current' : ''}`} key={row.name}>
