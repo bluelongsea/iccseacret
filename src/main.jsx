@@ -341,7 +341,10 @@ function IntroScreen() {
       <p className="intro-line line-1">세상의 이치</p>
       <p className="intro-line line-2">해경의 가치</p>
       <p className="intro-line line-3">언제나 같이.</p>
-      <h1 className="intro-line line-4">바다를 지키는 시크릿 가드, 해양경찰청.</h1>
+      <h1 className="intro-line line-4">
+        <span>바다를 지키는 시크릿가드</span>
+        <strong>해양경찰청.</strong>
+      </h1>
     </div>
   );
 }

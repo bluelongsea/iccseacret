@@ -109,8 +109,24 @@ button {
 
 .intro-line h1,
 .intro-line.line-4 {
-  font-size: 34px;
+  width: min(92%, 430px);
+  font-size: 30px;
   line-height: 1.25;
+}
+
+.line-4 span,
+.line-4 strong {
+  display: block;
+}
+
+.line-4 span {
+  white-space: nowrap;
+}
+
+.line-4 strong {
+  margin-top: 8px;
+  color: #ffc247;
+  font-size: 38px;
 }
 
 .line-1 {
