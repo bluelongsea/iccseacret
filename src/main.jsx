@@ -860,11 +860,50 @@ function LeaderboardScreen({ user, completed }) {
 }
 
 function BadgesScreen({ completed }) {
+  const baseBadges = allSectors.map((sector) => ({
+    id: sector.id,
+    title: sector.office,
+    subtitle: sector.mission,
+    asset: sector.asset,
+    unlocked: completed.includes(sector.id),
+  }));
+  const allUnlocked = allSectors.every((sector) => completed.includes(sector.id));
+  const secretBadge = {
+    id: 'secret-guard',
+    title: 'SEA-CRET Guard',
+    subtitle: '5개 배지 완성 시 공개',
+    asset: '/assets/secret-guard-badge.png',
+    unlocked: allUnlocked,
+    featured: true,
+  };
+  const badges = [...baseBadges, secretBadge];
+
   return (
-    <div className="simple-view">
+    <div className="simple-view badges-view">
       <h1><ShipWheel /> 배지</h1>
-      <div className="badge-grid large">
-        {allSectors.map((sector) => <article key={sector.id} className={completed.includes(sector.id) ? 'earned' : ''}><img src={sector.asset} alt="" /><span>{sector.office}</span></article>)}
+      <section className="badge-collection-hero">
+        <strong>{completed.length}/5 지방청 배지 수집</strong>
+        <p>미션을 완료하면 잠겨 있던 배지가 공개됩니다. 모든 배지를 모으면 마지막 SEA-CRET Guard가 열립니다.</p>
+        <div className="badge-progress"><i style={{ width: `${Math.min(100, completed.length * 20)}%` }} /></div>
+      </section>
+      <div className="badge-grid large collection-grid">
+        {badges.map((badge) => (
+          <article key={badge.id} className={`badge-card ${badge.unlocked ? 'earned' : 'locked'} ${badge.featured ? 'featured' : ''}`}>
+            {badge.unlocked ? (
+              <>
+                <div className="badge-image-wrap"><img src={badge.asset} alt="" /></div>
+                <span>{badge.title}</span>
+                <small>{badge.featured ? '최종 시크릿 배지 공개' : badge.subtitle}</small>
+              </>
+            ) : (
+              <div className="locked-badge">
+                <b>?</b>
+                <strong>{badge.title}</strong>
+                <small>{badge.featured ? '모든 배지 획득 시 공개' : '미션 완료 시 공개'}</small>
+              </div>
+            )}
+          </article>
+        ))}
       </div>
     </div>
   );

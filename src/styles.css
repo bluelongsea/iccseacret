@@ -1166,16 +1166,152 @@ button {
 }
 
 .badge-grid article {
-  opacity: 0.35;
   display: grid;
   place-items: center;
   gap: 8px;
   font-weight: 900;
 }
 
-.badge-grid article.earned {
-  opacity: 1;
-  box-shadow: 0 8px 18px rgba(12, 35, 73, 0.12);
+.badges-view {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(37, 99, 235, 0.14), transparent 24%),
+    radial-gradient(circle at 85% 18%, rgba(249, 115, 22, 0.12), transparent 24%);
+}
+
+.badge-collection-hero {
+  display: grid;
+  gap: 8px;
+  border-radius: 16px;
+  padding: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #071b3d, #0b2b5c 58%, #123b78);
+  box-shadow: 0 14px 28px rgba(7, 27, 61, 0.2);
+}
+
+.badge-collection-hero strong {
+  font-size: 18px;
+}
+
+.badge-collection-hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.badge-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.badge-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f97316, #ffc247, #38bdf8);
+  transition: width 0.35s ease;
+}
+
+.collection-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.badge-card {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.badge-card.earned {
+  border-color: rgba(37, 99, 235, 0.22);
+  background: linear-gradient(#ffffff, #f4fbff);
+  box-shadow: 0 12px 24px rgba(12, 35, 73, 0.12);
+}
+
+.badge-card.featured {
+  grid-column: 1 / -1;
+  min-height: 260px;
+}
+
+.badge-card.featured.earned {
+  color: #fff;
+  background: linear-gradient(145deg, #041225, #081f48 48%, #0b2b5c);
+  box-shadow: 0 18px 38px rgba(4, 18, 37, 0.28);
+}
+
+.badge-image-wrap {
+  width: 100%;
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(219, 234, 254, 0.52);
+}
+
+.badge-card.featured .badge-image-wrap {
+  min-height: 180px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.badge-card span {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.badge-card.featured.earned span {
+  color: #fff;
+  font-size: 18px;
+}
+
+.badge-card small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.badge-card.featured.earned small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.locked-badge {
+  width: 100%;
+  min-height: 196px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 16px 10px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.08), transparent 34%),
+    linear-gradient(145deg, #030712, #0b1020 58%, #111827);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.locked-badge b {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 42px;
+  line-height: 1;
+}
+
+.locked-badge strong {
+  font-size: 14px;
+}
+
+.locked-badge small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
 }
 
 .badge-grid img {
@@ -1186,6 +1322,12 @@ button {
 
 .large img {
   height: 150px;
+}
+
+.badge-card.featured img {
+  height: 190px;
+  border-radius: 10px;
+  object-fit: cover;
 }
 
 .outline-button {
