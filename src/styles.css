@@ -1545,21 +1545,14 @@ button {
 .salt-bread-stage {
   position: absolute;
   z-index: 2;
-  width: 94px;
-  height: 70px;
+  width: 104px;
+  height: 78px;
   transform: translate(-50%, -50%);
-  background-image: url('/assets/salt-bread-stages.png');
-  background-repeat: no-repeat;
-  background-size: 560px auto;
-  background-position-y: 58%;
+  object-fit: contain;
   filter: drop-shadow(0 10px 14px rgba(7, 27, 61, 0.22));
+  user-select: none;
+  pointer-events: none;
 }
-
-.salt-bread-stage.stage-1 { background-position-x: 2%; }
-.salt-bread-stage.stage-2 { background-position-x: 25%; }
-.salt-bread-stage.stage-3 { background-position-x: 50%; }
-.salt-bread-stage.stage-4 { background-position-x: 74%; }
-.salt-bread-stage.stage-5 { background-position-x: 98%; }
 
 .ship-paddle {
   position: absolute;

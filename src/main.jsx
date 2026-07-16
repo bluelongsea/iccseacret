@@ -634,7 +634,7 @@ function CertificateScreen({ user, participation, participants, participantGoal 
 function EastSaltBreadGame({ onComplete }) {
   const areaRef = useRef(null);
   const [shipX, setShipX] = useState(50);
-  const [bread, setBread] = useState({ x: 50, y: 8, vx: 0.18, vy: 1.15 });
+  const [bread, setBread] = useState({ x: 48, y: 12, vx: 1.05, vy: 1.35 });
   const [score, setScore] = useState(0);
   const [ended, setEnded] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -645,16 +645,24 @@ function EastSaltBreadGame({ onComplete }) {
     if (ended || saved) return undefined;
     const move = setInterval(() => {
       setBread((current) => {
+        const stage = Math.max(1, 5 - Math.floor(scoreRef.current / 50));
+        const difficulty = 1 + (5 - stage) * 0.1;
         let next = {
-          x: current.x + current.vx,
-          y: current.y + current.vy,
+          x: current.x + current.vx * difficulty,
+          y: current.y + current.vy * difficulty,
           vx: current.vx,
-          vy: current.vy + 0.055,
+          vy: current.vy + 0.07 + (5 - stage) * 0.006,
         };
 
-        if (next.x < 7 || next.x > 93) {
-          next.vx *= -1;
+        if (next.x < 8 || next.x > 92) {
+          next.vx *= -1.04;
           next.x = Math.max(7, Math.min(93, next.x));
+        }
+
+        if (next.y < 7) {
+          next.y = 7;
+          next.vy = Math.abs(next.vy) * 1.02;
+          next.vx += next.x < 50 ? 0.16 : -0.16;
         }
 
         const hitShip = next.vy > 0 && next.y > 73 && next.y < 83 && Math.abs(next.x - shipX) < 19;
@@ -662,8 +670,8 @@ function EastSaltBreadGame({ onComplete }) {
           next = {
             ...next,
             y: 70,
-            vy: -1.8 - Math.min(1.3, scoreRef.current / 90),
-            vx: (next.x - shipX) / 24,
+            vy: -2.35 - Math.min(1.65, scoreRef.current / 80) - (5 - stage) * 0.12,
+            vx: ((next.x - shipX) / 12) + (Math.random() - 0.5) * 0.36,
           };
           setScore((value) => {
             const updated = value + 1;
@@ -697,7 +705,7 @@ function EastSaltBreadGame({ onComplete }) {
   const resetBread = () => {
     scoreRef.current = 0;
     setScore(0);
-    setBread({ x: 50, y: 8, vx: 0.18, vy: 1.15 });
+    setBread({ x: 48, y: 12, vx: 1.05, vy: 1.35 });
     setEnded(false);
     setSaved(false);
   };
@@ -716,7 +724,7 @@ function EastSaltBreadGame({ onComplete }) {
         onPointerUp={() => { draggingRef.current = false; }}
         onPointerLeave={() => { draggingRef.current = false; }}
       >
-        <div className={`salt-bread-stage stage-${breadStage}`} style={{ left: `${bread.x}%`, top: `${bread.y}%` }} />
+        <img className={`salt-bread-stage stage-${breadStage}`} src={`/assets/salt-bread-${breadStage}.png`} alt={`${breadStage}단계 소금빵`} style={{ left: `${bread.x}%`, top: `${bread.y}%` }} />
         <button className="ship-paddle" style={{ left: `${shipX}%` }} type="button" aria-label="선박 조종 버튼">🚢</button>
         <div className="salt-sea" />
       </div>
