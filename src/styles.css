@@ -1725,6 +1725,225 @@ button {
   font-weight: 900;
 }
 
+.station-map-view {
+  background: linear-gradient(#f7fbff, #e9f7ff);
+}
+
+.location-hero {
+  display: grid;
+  grid-template-columns: 1fr 64px;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 90% 20%, rgba(249, 115, 22, 0.2), transparent 34%),
+    linear-gradient(135deg, #071b3d, #0b2b5c);
+  color: #fff;
+  box-shadow: 0 16px 32px rgba(7, 27, 61, 0.18);
+}
+
+.location-hero span {
+  display: block;
+  color: #ffc247;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.location-hero h2 {
+  margin: 5px 0 8px;
+  font-size: 25px;
+  line-height: 1.18;
+}
+
+.location-hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.location-hero svg {
+  width: 58px;
+  height: 58px;
+  padding: 13px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffc247;
+}
+
+.permission-card,
+.nearest-card,
+.station-database {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(8, 42, 92, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 24px rgba(8, 42, 92, 0.08);
+}
+
+.permission-card strong,
+.station-db-title strong {
+  color: #0b2b5c;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.permission-card p {
+  margin: 8px 0 12px;
+  color: #526174;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.permission-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.permission-actions button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 13px;
+  background: #0b2b5c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.permission-actions .deny {
+  background: #e5eaf1;
+  color: #516174;
+}
+
+.permission-card small {
+  display: block;
+  margin-top: 10px;
+  color: #6b7a90;
+  font-weight: 800;
+}
+
+.nearest-card {
+  border-color: rgba(249, 115, 22, 0.24);
+  background: linear-gradient(180deg, #fff, #fff7ed);
+}
+
+.nearest-card > span {
+  display: inline-grid;
+  place-items: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.nearest-card h2 {
+  margin: 10px 0 6px;
+  color: #071b3d;
+  font-size: 26px;
+}
+
+.nearest-card p {
+  margin: 0;
+  color: #43536c;
+  font-weight: 800;
+}
+
+.station-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.station-meta strong,
+.station-meta b {
+  color: #0b2b5c;
+}
+
+.nearest-card a {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(#ff9b21, #ef6c00);
+  color: #fff;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.station-db-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.station-db-title span {
+  color: #f97316;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.station-list {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.station-list article {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.station-list article.selected {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+}
+
+.station-list strong,
+.station-list span {
+  display: block;
+}
+
+.station-list strong {
+  color: #13233e;
+  font-size: 14px;
+}
+
+.station-list span {
+  margin-top: 3px;
+  color: #65748a;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.station-list small {
+  min-width: 48px;
+  color: #0b2b5c;
+  font-weight: 950;
+  text-align: right;
+}
+
 .badges-view {
   background:
     radial-gradient(circle at 20% 10%, rgba(37, 99, 235, 0.14), transparent 24%),

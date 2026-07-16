@@ -6,8 +6,10 @@ import {
   Camera,
   Eye,
   EyeOff,
+  MapPin,
   Home,
   KeyRound,
+  Navigation,
   RotateCcw,
   ShipWheel,
   Trophy,
@@ -86,6 +88,28 @@ const sessionKey = 'sea-cret-guard-user';
 const recordKey = 'sea-cret-guard-game-record';
 const publicUrl = 'https://iccsecretguard.vercel.app';
 const participantGoal = 100;
+const coastGuardStations = [
+  { name: '인천해양경찰서', region: '중부', lat: 37.4563, lng: 126.7052, address: '인천광역시 연수구 해돋이로 일대' },
+  { name: '평택해양경찰서', region: '중부', lat: 36.9807, lng: 126.8452, address: '경기도 평택시 포승읍 평택항 일대' },
+  { name: '태안해양경찰서', region: '중부', lat: 36.7456, lng: 126.2980, address: '충청남도 태안군 태안읍 일대' },
+  { name: '보령해양경찰서', region: '중부', lat: 36.3334, lng: 126.6128, address: '충청남도 보령시 대천항 일대' },
+  { name: '군산해양경찰서', region: '서해', lat: 35.9677, lng: 126.7366, address: '전북특별자치도 군산시 군산항 일대' },
+  { name: '부안해양경찰서', region: '서해', lat: 35.7280, lng: 126.7336, address: '전북특별자치도 부안군 부안읍 일대' },
+  { name: '목포해양경찰서', region: '서해', lat: 34.8118, lng: 126.3922, address: '전라남도 목포시 목포항 일대' },
+  { name: '완도해양경찰서', region: '서해', lat: 34.3110, lng: 126.7551, address: '전라남도 완도군 완도읍 일대' },
+  { name: '여수해양경찰서', region: '서해', lat: 34.7604, lng: 127.6622, address: '전라남도 여수시 여수항 일대' },
+  { name: '부산해양경찰서', region: '남해', lat: 35.0968, lng: 129.0403, address: '부산광역시 영도구 부산항 일대' },
+  { name: '울산해양경찰서', region: '남해', lat: 35.5384, lng: 129.3114, address: '울산광역시 남구 울산항 일대' },
+  { name: '창원해양경찰서', region: '남해', lat: 35.1496, lng: 128.6597, address: '경상남도 창원시 진해항 일대' },
+  { name: '통영해양경찰서', region: '남해', lat: 34.8544, lng: 128.4332, address: '경상남도 통영시 통영항 일대' },
+  { name: '사천해양경찰서', region: '남해', lat: 34.9347, lng: 128.0691, address: '경상남도 사천시 삼천포항 일대' },
+  { name: '포항해양경찰서', region: '동해', lat: 36.0190, lng: 129.3435, address: '경상북도 포항시 포항항 일대' },
+  { name: '울진해양경찰서', region: '동해', lat: 36.9931, lng: 129.4006, address: '경상북도 울진군 후포항 일대' },
+  { name: '동해해양경찰서', region: '동해', lat: 37.5247, lng: 129.1143, address: '강원특별자치도 동해시 묵호항 일대' },
+  { name: '속초해양경찰서', region: '동해', lat: 38.2070, lng: 128.5918, address: '강원특별자치도 속초시 속초항 일대' },
+  { name: '제주해양경찰서', region: '제주', lat: 33.5141, lng: 126.5297, address: '제주특별자치도 제주시 제주항 일대' },
+  { name: '서귀포해양경찰서', region: '제주', lat: 33.2539, lng: 126.5618, address: '제주특별자치도 서귀포시 서귀포항 일대' },
+];
 
 function calculatePoints(completedMissions = []) {
   const completedBaseCount = sectors.filter((sector) => completedMissions.includes(sector.id)).length;
@@ -135,6 +159,23 @@ async function requestLeaderboard(action, payload = {}) {
 function getQrSectorId() {
   const params = new URLSearchParams(window.location.search);
   return params.get('sector') || params.get('mission');
+}
+
+function getDistanceKm(from, to) {
+  const earthRadius = 6371;
+  const toRad = (value) => (value * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const lat1 = toRad(from.lat);
+  const lat2 = toRad(to.lat);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getNearestStation(position) {
+  return coastGuardStations
+    .map((station) => ({ ...station, distance: getDistanceKm(position, station) }))
+    .sort((a, b) => a.distance - b.distance)[0];
 }
 
 function App() {
@@ -313,7 +354,7 @@ function App() {
       {screen === 'leaderboard' && <LeaderboardScreen {...{ user, completed, remoteRows, remoteError }} />}
       {screen === 'badges' && <BadgesScreen completed={completed} />}
       {screen === 'notice' && <NoticeScreen />}
-      {screen === 'qr' && <QrScreen />}
+      {screen === 'qr' && <StationMapScreen />}
       <BottomNav screen={screen} setScreen={setScreen} />
     </PhoneShell>
   );
@@ -1118,23 +1159,99 @@ function NoticeScreen() {
   );
 }
 
-function QrScreen() {
-  const url = typeof window === 'undefined' ? publicUrl : window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? publicUrl : window.location.origin;
+function StationMapScreen() {
+  const [permissionMode, setPermissionMode] = useState('대기 중');
+  const [userPosition, setUserPosition] = useState(null);
+  const [nearest, setNearest] = useState(null);
+  const [locationError, setLocationError] = useState('');
+
+  const requestLocation = (mode) => {
+    setPermissionMode(mode);
+    setLocationError('');
+    if (!navigator.geolocation) {
+      setLocationError('이 브라우저에서는 GPS 기능을 사용할 수 없습니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const current = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setUserPosition(current);
+        setNearest(getNearestStation(current));
+      },
+      (error) => {
+        setNearest(null);
+        setLocationError(error.code === 1 ? '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.' : '현재 위치를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  };
+
   return (
-    <div className="simple-view qr-view">
-      <h1><Home /> 접속 QR</h1>
-      <QRCodeSVG value={url} size={220} level="H" />
-      <p>{url}</p>
-      <div className="mini-qr-grid">
-        {allSectors.map((sector) => <article key={sector.id}><span>{sector.label}</span><QRCodeSVG value={`${url}?sector=${sector.id}`} size={92} /></article>)}
-      </div>
+    <div className="simple-view station-map-view">
+      <h1><MapPin /> 지도</h1>
+      <section className="location-hero">
+        <div>
+          <span>ARCHI REWARD MAP</span>
+          <h2>가까운 해양경찰서 찾기</h2>
+          <p>GPS를 켜면 현재 위치에서 가장 가까운 해양경찰서를 안내합니다. 방문 시 SEA-CRET 아치증을 보여주면 준비된 상품으로 교환할 수 있습니다.</p>
+        </div>
+        <Navigation />
+      </section>
+
+      <section className="permission-card">
+        <strong>위치 접근 설정</strong>
+        <p>브라우저 권한창이 뜨면 원하는 방식을 선택해주세요. 앱 안의 버튼은 권한 요청을 시작하는 역할을 합니다.</p>
+        <div className="permission-actions">
+          <button onClick={() => requestLocation('위치 허용')}>위치 허용</button>
+          <button onClick={() => requestLocation('앱 사용할 때만')}>앱 사용할 때만</button>
+          <button className="deny" onClick={() => { setPermissionMode('거부'); setNearest(null); setLocationError('위치 기능을 사용하지 않도록 설정했습니다.'); }}>거부</button>
+        </div>
+        <small>현재 상태: {permissionMode}</small>
+      </section>
+
+      {nearest && (
+        <section className="nearest-card">
+          <span>가장 가까운 관서</span>
+          <h2>{nearest.name}</h2>
+          <p>{nearest.address}</p>
+          <div className="station-meta">
+            <strong>{nearest.region} 권역</strong>
+            <b>약 {nearest.distance.toFixed(1)}km</b>
+          </div>
+          <a href={`https://map.kakao.com/link/search/${encodeURIComponent(nearest.name)}`} target="_blank" rel="noreferrer">지도 앱에서 보기</a>
+        </section>
+      )}
+
+      {locationError && <div className="retry-hint">{locationError}</div>}
+
+      <section className="station-database">
+        <div className="station-db-title">
+          <strong>전국 해양경찰서 데이터베이스</strong>
+          <span>{coastGuardStations.length}개 관서</span>
+        </div>
+        <div className="station-list">
+          {coastGuardStations.map((station) => (
+            <article key={station.name} className={nearest?.name === station.name ? 'selected' : ''}>
+              <div>
+                <strong>{station.name}</strong>
+                <span>{station.address}</span>
+              </div>
+              <small>{userPosition ? `${getDistanceKm(userPosition, station).toFixed(1)}km` : station.region}</small>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
 function BottomNav({ screen, setScreen }) {
   const navItems = [
-    { id: 'qr', label: '미션', icon: ShipWheel },
+    { id: 'qr', label: '지도', icon: MapPin },
     { id: 'leaderboard', label: '랭킹', icon: Trophy },
     { id: 'map', label: '홈', icon: Home, center: true },
     { id: 'badges', label: '배지', icon: Anchor },
