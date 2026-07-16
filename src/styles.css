@@ -191,8 +191,8 @@ button {
   right: 0;
   bottom: 0;
   z-index: 8;
-  height: 78px;
-  background: #082a5c;
+  height: 104px;
+  background: linear-gradient(transparent, rgba(8, 42, 92, 0.78) 34%, #082a5c 100%);
   pointer-events: none;
 }
 
@@ -354,6 +354,47 @@ button {
     linear-gradient(#60c9ed, #3aa7df);
 }
 
+.horizon-wave {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  z-index: 0;
+  height: 70px;
+  pointer-events: none;
+  opacity: 0.62;
+}
+
+.horizon-wave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60px 24px at 30px 36px, rgba(255, 255, 255, 0.42) 0 45%, transparent 47%),
+    radial-gradient(70px 28px at 94px 34px, rgba(255, 255, 255, 0.34) 0 43%, transparent 45%);
+  background-size: 128px 64px;
+  animation: wave-drift 7s ease-in-out infinite alternate;
+}
+
+.wave-a {
+  top: 92px;
+}
+
+.wave-b {
+  top: 128px;
+  opacity: 0.32;
+  transform: scaleX(1.15);
+}
+
+.wave-b::before {
+  animation-duration: 9s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes wave-drift {
+  from { transform: translateX(-18px) translateY(0); }
+  to { transform: translateX(18px) translateY(4px); }
+}
+
 .mission-korea-map {
   position: absolute;
   z-index: 1;
@@ -450,7 +491,7 @@ button {
 
 .mission-card {
   position: absolute;
-  z-index: 5;
+  z-index: 6;
   width: 150px;
   padding: 9px;
   border-radius: 18px;
@@ -1424,15 +1465,19 @@ button {
 
 .bottom-nav {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
   z-index: 20;
-  height: 76px;
+  height: 68px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  background: #082a5c;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 22px;
+  background: rgba(8, 42, 92, 0.84);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 34px rgba(7, 27, 61, 0.28);
+  overflow: visible;
 }
 
 .bottom-nav button {
@@ -1443,8 +1488,9 @@ button {
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.62);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
+  border-radius: 18px;
 }
 
 .bottom-nav svg {
@@ -1463,15 +1509,15 @@ button {
 }
 
 .bottom-nav .home-center svg {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   padding: 8px;
   background: #ffc247;
   color: #082a5c;
   box-sizing: content-box;
-  transform: translateY(-7px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+  transform: translateY(-11px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
 }
 
 .bottom-nav .home-center.active svg {

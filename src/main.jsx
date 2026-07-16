@@ -299,6 +299,8 @@ function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, s
       <ParticipationCard participation={participation} participants={participants} participantGoal={participantGoal} />
       {notice && <div className="toast">✅ {notice}</div>}
       <section className="sea-map">
+        <div className="horizon-wave wave-a" />
+        <div className="horizon-wave wave-b" />
         <KoreaMissionMap />
         <div className="island island-a" />
         <div className="island island-b" />
