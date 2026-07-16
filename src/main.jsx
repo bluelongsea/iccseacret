@@ -23,9 +23,9 @@ const sectors = [
     id: 'east',
     label: '동해',
     office: '동해지방청',
-    title: '검은빵 구조 작전',
-    mission: '두더지 잡기',
-    description: '9개 중 하나씩 나오는 검은빵 3개를 10초 안에 클릭하세요.',
+    title: '소금빵 튕기기 작전',
+    mission: '소금빵 튕기기',
+    description: '선박을 손가락으로 움직여 내려오는 소금빵을 튕기세요. 1번만 튕겨도 배지가 지급됩니다.',
     color: '#f05a28',
     asset: '/assets/east.png',
     position: 'card-east',
@@ -111,9 +111,9 @@ const coastGuardStations = [
   { name: '서귀포해양경찰서', region: '제주', lat: 33.2539, lng: 126.5618, address: '제주특별자치도 서귀포시 서귀포항 일대' },
 ];
 
-function calculatePoints(completedMissions = []) {
+function calculatePoints(completedMissions = [], saltScore = 0) {
   const completedBaseCount = sectors.filter((sector) => completedMissions.includes(sector.id)).length;
-  return completedBaseCount * 500 + (completedMissions.includes('central') ? 2000 : 0);
+  return completedBaseCount * 500 + (completedMissions.includes('central') ? 2000 : 0) + Number(saltScore || 0);
 }
 
 function readJson(key, fallback) {
@@ -132,9 +132,11 @@ function buildPublicRanking(accounts = [], currentUser, currentCompleted = []) {
   return accounts
     .map((account) => {
       const missions = account.name === currentUser ? currentCompleted : Array.isArray(account.completed) ? account.completed : [];
+      const saltScore = Number(account.saltScore || 0);
       return {
         name: account.name,
-        points: calculatePoints(missions),
+        points: calculatePoints(missions, saltScore),
+        saltScore,
         missionCount: missions.length,
         completed: missions,
         current: account.name === currentUser,
@@ -195,6 +197,11 @@ function App() {
   const [activeSector, setActiveSector] = useState(qrSector && (qrSector.id !== 'central' || finalUnlocked) ? qrSector : sectors[0]);
   const [clearedSector, setClearedSector] = useState(null);
   const [completed, setCompleted] = useState(savedCompleted);
+  const [saltScore, setSaltScore] = useState(() => {
+    const accounts = readJson(accountsKey, []);
+    const account = accounts.find((item) => item.name === savedUser);
+    return Number(account?.saltScore || 0);
+  });
   const [notice, setNotice] = useState(qrSector ? `${qrSector.office} QR로 접속했습니다.` : '');
   const [remoteRows, setRemoteRows] = useState([]);
   const [remoteError, setRemoteError] = useState('');
@@ -229,12 +236,18 @@ function App() {
     if (!user) return;
     const accounts = readJson(accountsKey, []);
     saveJson(accountsKey, accounts.map((account) => (
-      account.name === user ? { ...account, completed } : account
+      account.name === user ? { ...account, completed, saltScore: Math.max(Number(account.saltScore || 0), saltScore) } : account
     )));
-    requestLeaderboard('progress', { name: user, completed })
+    requestLeaderboard('progress', { name: user, completed, saltScore })
       .then(refreshLeaderboard)
       .catch((error) => setRemoteError(error.message || '공용 랭킹 저장소 연결이 필요합니다.'));
-  }, [completed, user]);
+  }, [completed, saltScore, user]);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(''), 1000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (!user || !qrSector) return;
@@ -248,7 +261,7 @@ function App() {
   }, [user]);
 
   const completedBaseCount = sectors.filter((sector) => completed.includes(sector.id)).length;
-  const totalPoints = calculatePoints(completed);
+  const totalPoints = calculatePoints(completed, saltScore);
   const registeredUsers = readJson(accountsKey, []);
   const participants = Math.max(remoteRows.length, registeredUsers.length, user ? 1 : 0);
   const participation = Math.min(100, (participants / participantGoal) * 100);
@@ -275,7 +288,7 @@ function App() {
         joinRemoteError = error.message || '공용 랭킹 저장소 연결이 필요합니다.';
         setRemoteError(joinRemoteError);
       }
-      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: [] }]);
+      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: [], saltScore: 0 }]);
       setAuthTab('login');
       setName('');
       setPassword('');
@@ -297,11 +310,12 @@ function App() {
       return;
     }
     if (!account) {
-      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: loginAccount.completed || [] }]);
+      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: loginAccount.completed || [], saltScore: Number(loginAccount.saltScore || 0) }]);
     }
     sessionStorage.setItem(sessionKey, inputName);
     setUser(inputName);
     setCompleted(Array.isArray(loginAccount.completed) ? loginAccount.completed : []);
+    setSaltScore(Number(loginAccount.saltScore || 0));
     setName('');
     setPassword('');
     setScreen(qrSector ? 'game' : 'map');
@@ -316,7 +330,10 @@ function App() {
     setScreen('game');
   };
 
-  const completeMission = (sectorId) => {
+  const completeMission = (sectorId, result = {}) => {
+    if (sectorId === 'east') {
+      setSaltScore((current) => Math.max(current, Number(result.saltScore || 0)));
+    }
     setCompleted((current) => Array.from(new Set([...current, sectorId])));
     const sector = allSectors.find((item) => item.id === sectorId);
     setNotice(`${sector?.office || '미션'} 완수! 배지가 적립되었습니다.`);
@@ -347,7 +364,7 @@ function App() {
   return (
     <PhoneShell>
       {screen === 'map' && <MapScreen {...{ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants, participantGoal }} />}
-      {screen === 'game' && <GameScreen key={activeSector.id} sector={activeSector} onComplete={() => completeMission(activeSector.id)} onBack={() => setScreen('map')} />}
+      {screen === 'game' && <GameScreen key={activeSector.id} sector={activeSector} onComplete={(result) => completeMission(activeSector.id, result)} onBack={() => setScreen('map')} />}
       {screen === 'complete' && <MissionCompleteScreen sector={clearedSector} onDone={() => setScreen(clearedSector?.id === 'central' ? 'certificate' : 'map')} />}
       {screen === 'certificate' && <CertificateScreen {...{ user, participation, participants, participantGoal }} />}
       {screen === 'profile' && <ProfileScreen {...{ user, completed, totalPoints, resetRecord, logout }} />}
@@ -526,6 +543,7 @@ function MissionCard({ sector, locked, done, onStart }) {
 
 function ParticipationCard({ participation, participants, participantGoal }) {
   const complete = participation >= 100;
+  const donation = participants * 100;
   return (
     <section className="participation-card">
       <div>
@@ -535,7 +553,7 @@ function ParticipationCard({ participation, participants, participantGoal }) {
       <div className="participation-line">
         <i style={{ width: `${participation}%` }} />
       </div>
-      <p>{complete ? '참여 인원이 모두 채워져 아치 찾기에 성공했습니다.' : '회원가입한 요원이 늘어날수록 SEA-CRET 아치 발견에 가까워집니다.'}</p>
+      <p>{complete ? `참여바가 가득 찼습니다. 해양경찰청 이름으로 ${donation.toLocaleString()}원을 기부할 수 있습니다.` : `1명당 100원씩 쌓여 현재 ${donation.toLocaleString()}원이 모였습니다. 참여바가 꽉 차면 해양경찰청 이름으로 기부할 수 있습니다.`}</p>
     </section>
   );
 }
@@ -550,7 +568,7 @@ function GameScreen({ sector, onComplete, onBack }) {
           <h1>{sector.title}</h1>
         </div>
       </header>
-      {sector.id === 'east' && <EastWhackGame onComplete={onComplete} />}
+      {sector.id === 'east' && <EastSaltBreadGame onComplete={onComplete} />}
       {sector.id === 'west' && <WestHiddenGame onComplete={onComplete} />}
       {sector.id === 'south' && <SouthPuzzleGame onComplete={onComplete} />}
       {sector.id === 'jeju' && <JejuCatchGame onComplete={onComplete} />}
@@ -597,72 +615,119 @@ function CertificateScreen({ user, participation, participants, participantGoal 
         <button className="issue-button" onClick={() => setIssued(true)}>SEA-CRET 아치증 발급받기!</button>
       ) : (
         <section className="issued-card">
-          <img src="/assets/archi-certificate.png" alt="SEA-CRET 아치증" />
+          <div className="generated-certificate" role="img" aria-label={`${user} 요원 SEA-CRET 아치증`}>
+            <div>
+              <span>SEA-CRET ARCHI</span>
+              <h2>{user}</h2>
+              <strong>APPROVED</strong>
+              <p>아치는 바다의 안전을 지키는 특별한 임무를 수행할 요원으로 임명합니다.</p>
+            </div>
+            <img src="/assets/secret-guard-badge.png" alt="" />
+          </div>
           <strong>아치증 발급 완료!</strong>
-          <a href="/assets/archi-certificate.png" download="SEA-CRET-ARCHI-CERTIFICATE.png">아치증 저장하기</a>
         </section>
       )}
     </div>
   );
 }
 
-function EastWhackGame({ onComplete }) {
-  const target = 3;
-  const [time, setTime] = useState(10);
+function EastSaltBreadGame({ onComplete }) {
+  const areaRef = useRef(null);
+  const [shipX, setShipX] = useState(50);
+  const [bread, setBread] = useState({ x: 50, y: 8, vx: 0.18, vy: 1.15 });
   const [score, setScore] = useState(0);
-  const [holes, setHoles] = useState(createBreads());
-  const [done, setDone] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const draggingRef = useRef(false);
+  const scoreRef = useRef(0);
 
   useEffect(() => {
-    const tick = setInterval(() => {
-      setTime((current) => {
-        if (current <= 1) {
-          clearInterval(tick);
-          return 0;
+    if (ended || saved) return undefined;
+    const move = setInterval(() => {
+      setBread((current) => {
+        let next = {
+          x: current.x + current.vx,
+          y: current.y + current.vy,
+          vx: current.vx,
+          vy: current.vy + 0.055,
+        };
+
+        if (next.x < 7 || next.x > 93) {
+          next.vx *= -1;
+          next.x = Math.max(7, Math.min(93, next.x));
         }
-        return current - 1;
+
+        const hitShip = next.vy > 0 && next.y > 73 && next.y < 83 && Math.abs(next.x - shipX) < 19;
+        if (hitShip) {
+          next = {
+            ...next,
+            y: 70,
+            vy: -1.8 - Math.min(1.3, scoreRef.current / 90),
+            vx: (next.x - shipX) / 24,
+          };
+          setScore((value) => {
+            const updated = value + 1;
+            scoreRef.current = updated;
+            return updated;
+          });
+        }
+
+        if (next.y > 105) {
+          setEnded(true);
+        }
+
+        return next;
       });
-    }, 1000);
-    return () => clearInterval(tick);
-  }, []);
+    }, 24);
+    return () => clearInterval(move);
+  }, [ended, saved, shipX]);
 
-  useEffect(() => {
-    if (time === 0 || done) return undefined;
-    const pop = setInterval(() => setHoles(createBreads()), 700);
-    return () => clearInterval(pop);
-  }, [time, done]);
-
-  useEffect(() => {
-    if (score >= target && !done) {
-      setDone(true);
-      setTimeout(onComplete, 500);
-    }
-  }, [score, done, onComplete, target]);
-
-  const handleBreadClick = (hole) => {
-    if (time === 0 || done || hole.type !== 'black') return;
-    setScore((value) => value + 1);
-    setHoles(createBreads());
+  const moveShip = (clientX) => {
+    const rect = areaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setShipX(Math.max(10, Math.min(90, ((clientX - rect.left) / rect.width) * 100)));
   };
 
+  const finishGame = () => {
+    if (score < 1 || saved) return;
+    setSaved(true);
+    onComplete({ saltScore: score });
+  };
+
+  const resetBread = () => {
+    scoreRef.current = 0;
+    setScore(0);
+    setBread({ x: 50, y: 8, vx: 0.18, vy: 1.15 });
+    setEnded(false);
+    setSaved(false);
+  };
+
+  const breadStage = Math.max(1, 5 - Math.floor(score / 50));
+
   return (
-    <div className="mini-game bread-game">
-      <GameStats time={time} current={score} target={target} label="검은빵" />
-      <div className="bread-board">
-        {holes.map((hole) => (
-          <button
-            key={hole.id}
-            className={`bread-hole ${hole.up ? 'up' : ''}`}
-            onClick={() => handleBreadClick(hole)}
-            disabled={done || time === 0}
-          >
-            <span className={`bread ${hole.type}`}>
-              <img src={hole.image} alt={hole.type === 'black' ? '검은빵' : '일반빵'} />
-            </span>
-          </button>
-        ))}
+    <div className="mini-game salt-game">
+      <GameStats time="튕기기" current={score} target={250} label="점" />
+      <p className="salt-guide">작은 선박을 꾹 누른 채 좌우로 움직여 소금빵을 튕기세요. 1번만 튕겨도 동해 배지를 받을 수 있습니다.</p>
+      <div
+        ref={areaRef}
+        className="salt-playfield"
+        onPointerDown={(event) => { draggingRef.current = true; moveShip(event.clientX); }}
+        onPointerMove={(event) => draggingRef.current && moveShip(event.clientX)}
+        onPointerUp={() => { draggingRef.current = false; }}
+        onPointerLeave={() => { draggingRef.current = false; }}
+      >
+        <div className={`salt-bread-stage stage-${breadStage}`} style={{ left: `${bread.x}%`, top: `${bread.y}%` }} />
+        <button className="ship-paddle" style={{ left: `${shipX}%` }} type="button" aria-label="선박 조종 버튼">🚢</button>
+        <div className="salt-sea" />
       </div>
-      {time === 0 && score < target && <RetryHint />}
+      <div className="salt-stage-line">
+        <span>현재 빵 단계</span>
+        <strong>{breadStage}단계</strong>
+        <small>50점마다 한 단계씩 밝아집니다.</small>
+      </div>
+      {score >= 1 && !ended && <button className="salt-save-button" onClick={finishGame}>점수 저장하고 배지 받기</button>}
+      {ended && score >= 1 && <button className="salt-save-button" onClick={finishGame}>최종 {score}점 저장하기</button>}
+      {ended && score < 1 && <div className="retry-hint">소금빵을 1번 이상 튕겨야 배지를 받을 수 있습니다.<button onClick={resetBread}>다시 도전</button></div>}
     </div>
   );
 }
@@ -1081,6 +1146,7 @@ function LeaderboardScreen({ user, completed, remoteRows, remoteError }) {
     <div className="simple-view">
       <h1><Trophy /> 랭킹</h1>
       <p className="leaderboard-note">공용 랭킹 저장소에 등록된 모든 요원의 미션 기록을 기준으로 표시됩니다.</p>
+      <div className="coupon-note">상위 3명에게 소금빵 무료쿠폰을 드립니다.</div>
       {remoteError && (
         <div className="retry-hint">
           공용 랭킹 저장소 연결이 필요합니다. 현재는 이 기기에 저장된 요원만 표시됩니다.
@@ -1090,7 +1156,7 @@ function LeaderboardScreen({ user, completed, remoteRows, remoteError }) {
       {rows.map((row, index) => (
         <div className={`rank-row ${row.current ? 'current' : ''}`} key={row.name}>
           <strong>{index + 1}</strong>
-          <span>{row.name}{row.current ? ' 요원' : ''}<small>{row.missionCount}/5 미션 완료</small></span>
+          <span>{row.name}{row.current ? ' 요원' : ''}<small>{row.missionCount}/5 미션 완료 · 소금빵 {Number(row.saltScore || 0).toLocaleString()}점</small></span>
           <b>{row.points.toLocaleString()} P</b>
         </div>
       ))}

@@ -37,12 +37,13 @@ function safeAccount(account) {
   return {
     name: String(account.name || '').slice(0, 24),
     completed: Array.isArray(account.completed) ? account.completed.filter((id) => sectorIds.includes(id)) : [],
+    saltScore: Math.max(0, Number(account.saltScore || 0)),
   };
 }
 
-function calculatePoints(completed = []) {
+function calculatePoints(completed = [], saltScore = 0) {
   const baseCount = ['east', 'west', 'south', 'jeju'].filter((id) => completed.includes(id)).length;
-  return baseCount * 500 + (completed.includes('central') ? 2000 : 0);
+  return baseCount * 500 + (completed.includes('central') ? 2000 : 0) + Math.max(0, Number(saltScore || 0));
 }
 
 function publicRows(accounts = []) {
@@ -52,7 +53,7 @@ function publicRows(accounts = []) {
       return {
         ...safe,
         missionCount: safe.completed.length,
-        points: calculatePoints(safe.completed),
+        points: calculatePoints(safe.completed, safe.saltScore),
       };
     })
     .sort((a, b) => b.points - a.points || b.missionCount - a.missionCount || a.name.localeCompare(b.name, 'ko'));
@@ -110,6 +111,7 @@ export default async function handler(req, res) {
     const name = String(body.name || '').trim().slice(0, 24);
     const password = String(body.password || '').trim();
     const completed = Array.isArray(body.completed) ? body.completed.filter((id) => sectorIds.includes(id)) : [];
+    const saltScore = Math.max(0, Number(body.saltScore || 0));
     const accounts = await readAccounts();
     const index = accounts.findIndex((account) => account.name === name);
 
@@ -127,9 +129,9 @@ export default async function handler(req, res) {
         res.status(409).json({ error: '이미 등록된 요원명입니다.' });
         return;
       }
-      accounts.push({ name, password, completed: [] });
+      accounts.push({ name, password, completed: [], saltScore: 0 });
       await writeAccounts(accounts);
-      res.status(200).json({ account: { name, completed: [] }, rows: publicRows(accounts) });
+      res.status(200).json({ account: { name, completed: [], saltScore: 0 }, rows: publicRows(accounts) });
       return;
     }
 
@@ -144,11 +146,12 @@ export default async function handler(req, res) {
 
     if (action === 'progress') {
       if (index < 0) {
-        accounts.push({ name, password: '', completed });
+        accounts.push({ name, password: '', completed, saltScore });
       } else {
         accounts[index] = {
           ...accounts[index],
           completed: Array.from(new Set([...(accounts[index].completed || []), ...completed])),
+          saltScore: Math.max(Number(accounts[index].saltScore || 0), saltScore),
         };
       }
       await writeAccounts(accounts);
