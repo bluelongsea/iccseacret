@@ -256,23 +256,39 @@ function AuthScreen({ authTab, setAuthTab, name, setName, password, setPassword,
   const login = authTab === 'login';
   return (
     <div className="auth-view">
-      <h1><Anchor /> SEA-CRET GUARD</h1>
-      <p>아치와 함께하는 해양경찰 미션에 참여하려면 요원 인증을 완료하세요.</p>
-      <div className="auth-tabs">
-        <button className={login ? 'active' : ''} onClick={() => setAuthTab('login')}><KeyRound size={16} /> 로그인</button>
-        <button className={!login ? 'active' : ''} onClick={() => setAuthTab('join')}>신규 등록</button>
-      </div>
-      {authMessage && <div className="message">{authMessage}</div>}
-      <form onSubmit={(event) => { event.preventDefault(); handleAuth(); }}>
-        <label>{login ? '요원명' : '새 요원명'}</label>
-        <input value={name} onChange={(event) => setName(event.target.value)} />
-        <label>비밀번호</label>
-        <div className="password-row">
-          <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} />
-          <button type="button" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
+      <section className="auth-hero-card">
+        <div className="auth-logo-pill"><Anchor size={17} /> 해양경찰 미션 인증</div>
+        <img className="auth-character" src="/assets/central.png" alt="아치 캐릭터" />
+        <div className="auth-title-block">
+          <span>SEA-CRET GUARD</span>
+          <h1>{login ? '요원 로그인' : '신규 요원 등록'}</h1>
+          <p>{login ? '가입한 요원명과 비밀번호로 다시 미션을 이어가세요.' : '아치와 함께 5개 지방청 미션을 수행할 요원 정보를 등록하세요.'}</p>
         </div>
-        <button className="orange-button" type="submit">{login ? '접속하기' : '가입하기'}</button>
-      </form>
+        <div className="auth-mini-stats">
+          <span>5개 지방청</span>
+          <span>미션 배지</span>
+          <span>아치증 발급</span>
+        </div>
+      </section>
+
+      <section className="auth-panel">
+        <div className="auth-tabs">
+          <button type="button" className={login ? 'active' : ''} onClick={() => setAuthTab('login')}><KeyRound size={15} /> 로그인</button>
+          <button type="button" className={!login ? 'active' : ''} onClick={() => setAuthTab('join')}>신규 등록</button>
+        </div>
+        {authMessage && <div className="message auth-message">{authMessage}</div>}
+        <form onSubmit={(event) => { event.preventDefault(); handleAuth(); }}>
+          <label>{login ? '요원명' : '새 요원명'}</label>
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="요원명을 입력하세요" />
+          <label>비밀번호</label>
+          <div className="password-row">
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="비밀번호를 입력하세요" />
+            <button type="button" aria-label="비밀번호 보기" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button>
+          </div>
+          <button className="orange-button auth-submit" type="submit">{login ? '미션 접속하기' : '요원 등록하기'}</button>
+        </form>
+        <a className="kcg-link" href="https://www.kcg.go.kr" target="_blank" rel="noreferrer">해양경찰청 홈페이지 바로가기</a>
+      </section>
     </div>
   );
 }
@@ -939,13 +955,29 @@ function QrScreen() {
 }
 
 function BottomNav({ screen, setScreen }) {
+  const navItems = [
+    { id: 'qr', label: '미션', icon: ShipWheel },
+    { id: 'leaderboard', label: '랭킹', icon: Trophy },
+    { id: 'map', label: '홈', icon: Home, center: true },
+    { id: 'badges', label: '배지', icon: Anchor },
+    { id: 'profile', label: '마이', icon: UserRound },
+  ];
+
   return (
     <nav className="bottom-nav">
-      <button className={screen === 'qr' ? 'active' : ''} onClick={() => setScreen('qr')}><ShipWheel />미션</button>
-      <button className={screen === 'leaderboard' ? 'active' : ''} onClick={() => setScreen('leaderboard')}><Trophy />랭킹</button>
-      <button className={`home-center ${screen === 'map' ? 'active' : ''}`} onClick={() => setScreen('map')}><Home />홈</button>
-      <button className={screen === 'badges' ? 'active' : ''} onClick={() => setScreen('badges')}><Anchor />배지</button>
-      <button className={screen === 'profile' ? 'active' : ''} onClick={() => setScreen('profile')}><UserRound />마이페이지</button>
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.id}
+            className={`${screen === item.id ? 'active' : ''} ${item.center ? 'home-center' : ''}`}
+            onClick={() => setScreen(item.id)}
+          >
+            <span className="nav-icon"><Icon /></span>
+            <span className="nav-label">{item.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
