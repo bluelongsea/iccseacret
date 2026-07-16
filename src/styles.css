@@ -412,19 +412,66 @@ button {
   box-shadow: 0 14px 22px rgba(249, 115, 22, 0.24);
 }
 
-.kcg-link {
-  display: block;
-  width: fit-content;
-  margin: 13px auto 0;
-  color: #6b7a90;
-  font-size: 11px;
-  font-weight: 700;
-  text-decoration: none;
+.kcg-channel-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.kcg-link:hover {
+.kcg-channel-links a {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 7px 8px;
+  border: 1px solid rgba(8, 42, 92, 0.1);
+  border-radius: 14px;
+  background: #f8fbff;
+  color: #273854;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 8px 14px rgba(8, 42, 92, 0.06);
+}
+
+.kcg-channel-links a:hover {
+  border-color: rgba(249, 115, 22, 0.32);
   color: #082a5c;
-  text-decoration: underline;
+  transform: translateY(-1px);
+}
+
+.channel-logo {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.home-logo {
+  background: linear-gradient(135deg, #082a5c, #2563eb);
+}
+
+.instagram-logo {
+  background: radial-gradient(circle at 32% 108%, #feda75 0 24%, #fa7e1e 36%, #d62976 62%, #962fbf 78%, #4f5bd5 100%);
+  font-size: 19px;
+}
+
+.blog-logo {
+  background: #03c75a;
+  font-family: "Noto Sans", sans-serif;
+}
+
+.youtube-logo {
+  background: #ff0033;
+  font-size: 14px;
 }
 
 .orange-button {

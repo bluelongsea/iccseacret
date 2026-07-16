@@ -381,7 +381,24 @@ function AuthScreen({ authTab, setAuthTab, name, setName, password, setPassword,
           </div>
           <button className="orange-button auth-submit" type="submit">{login ? '미션 접속하기' : '요원 등록하기'}</button>
         </form>
-        <a className="kcg-link" href="https://www.kcg.go.kr" target="_blank" rel="noreferrer">해양경찰청 홈페이지 바로가기</a>
+        <div className="kcg-channel-links" aria-label="해양경찰청 공식 채널 바로가기">
+          <a href="https://www.kcg.go.kr" target="_blank" rel="noreferrer">
+            <span className="channel-logo home-logo"><Anchor size={15} /></span>
+            <span>해양경찰청 홈페이지</span>
+          </a>
+          <a href="https://www.instagram.com/korea_coast_guard/" target="_blank" rel="noreferrer">
+            <span className="channel-logo instagram-logo">◎</span>
+            <span>해양경찰청 인스타그램</span>
+          </a>
+          <a href="https://blog.naver.com/kcgpr" target="_blank" rel="noreferrer">
+            <span className="channel-logo blog-logo">B</span>
+            <span>해양경찰청 블로그</span>
+          </a>
+          <a href="https://www.youtube.com/@koreacoastguard" target="_blank" rel="noreferrer">
+            <span className="channel-logo youtube-logo">▶</span>
+            <span>해양경찰청 유튜브</span>
+          </a>
+        </div>
       </section>
     </div>
   );
