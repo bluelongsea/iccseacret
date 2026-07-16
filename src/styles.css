@@ -267,6 +267,56 @@ button {
   background: var(--orange);
 }
 
+.participation-card {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(11, 43, 92, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 22px rgba(11, 43, 92, 0.08);
+}
+
+.participation-card div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.participation-card strong {
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.participation-card span,
+.participation-card p {
+  color: #526174;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.participation-card p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.participation-line {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.participation-line i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f97316, #ffc247, #22c55e);
+  transition: width 0.4s ease;
+}
+
 .toast {
   position: absolute;
   z-index: 20;
@@ -596,6 +646,78 @@ button {
   50% { transform: translateY(18px) rotate(24deg); opacity: 1; }
 }
 
+.certificate-view {
+  min-height: calc(100% - 76px);
+  padding: 24px 18px 104px;
+  background: linear-gradient(#e8f8ff, #ffffff 42%, #edf8ff);
+}
+
+.certificate-hero {
+  margin-bottom: 14px;
+}
+
+.certificate-hero span {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: #fff;
+  background: var(--orange);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.certificate-hero h1 {
+  margin: 10px 0 6px;
+  color: var(--navy);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.certificate-hero p {
+  margin: 0;
+  color: #526174;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.issue-button,
+.issued-card a {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--orange);
+  box-shadow: 0 12px 20px rgba(249, 115, 22, 0.22);
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.issued-card {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  border: 1px solid rgba(11, 43, 92, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 16px 34px rgba(11, 43, 92, 0.12);
+}
+
+.issued-card img {
+  width: 100%;
+  border-radius: 10px;
+  border: 2px solid var(--navy);
+}
+
+.issued-card strong {
+  color: var(--navy);
+  font-size: 20px;
+}
+
 .mini-game {
   border-radius: 18px;
   padding: 14px;
@@ -632,35 +754,30 @@ button {
 .bread-hole {
   height: 94px;
   border: 0;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 70%, #5c4033 0 34%, #31231f 35% 42%, transparent 43%);
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 82%, #5c4033 0 27%, #31231f 28% 35%, transparent 36%);
   overflow: hidden;
+  padding: 0;
 }
 
 .bread {
   display: inline-grid;
   place-items: center;
-  width: 58px;
+  width: 78px;
   height: 58px;
-  border-radius: 50%;
   transform: translateY(72px);
   transition: transform 0.28s ease;
-  font-size: 24px;
 }
 
 .up .bread {
-  transform: translateY(8px);
+  transform: translateY(10px);
 }
 
-.bread.black {
-  color: #fff;
-  background: #111;
-}
-
-.bread.white {
-  color: #111;
-  background: #fff3d8;
-  border: 2px solid #d8b27a;
+.bread img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px rgba(30, 20, 10, 0.24));
 }
 
 .hidden-scene,
@@ -1090,6 +1207,32 @@ button {
   border-radius: 50%;
   color: #fff;
   background: var(--navy);
+}
+
+.rank-row.current {
+  border-color: rgba(249, 115, 22, 0.45);
+  background: #fff7ed;
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.12);
+}
+
+.rank-row span {
+  display: grid;
+  gap: 3px;
+  color: var(--navy);
+  font-weight: 950;
+}
+
+.rank-row small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.leaderboard-note {
+  margin: -6px 0 14px;
+  color: #526174;
+  font-weight: 850;
+  line-height: 1.45;
 }
 
 .notice-card {

@@ -23,7 +23,7 @@ const sectors = [
     office: '동해지방청',
     title: '검은빵 구조 작전',
     mission: '두더지 잡기',
-    description: '10초 안에 검은빵 3개를 클릭하세요.',
+    description: '9개 중 하나씩 나오는 검은빵 3개를 10초 안에 클릭하세요.',
     color: '#f05a28',
     asset: '/assets/east.png',
     position: 'card-east',
@@ -86,6 +86,11 @@ const sessionKey = 'sea-cret-guard-user';
 const recordKey = 'sea-cret-guard-game-record';
 const publicUrl = 'https://iccsecretguard.vercel.app';
 
+function calculatePoints(completedMissions = []) {
+  const completedBaseCount = sectors.filter((sector) => completedMissions.includes(sector.id)).length;
+  return completedBaseCount * 500 + (completedMissions.includes('central') ? 2000 : 0);
+}
+
 function readJson(key, fallback) {
   try {
     return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback;
@@ -124,7 +129,12 @@ function App() {
 
   useEffect(() => {
     saveJson(recordKey, completed);
-  }, [completed]);
+    if (!user) return;
+    const accounts = readJson(accountsKey, []);
+    saveJson(accountsKey, accounts.map((account) => (
+      account.name === user ? { ...account, completed } : account
+    )));
+  }, [completed, user]);
 
   useEffect(() => {
     if (!user || !qrSector) return;
@@ -138,7 +148,9 @@ function App() {
   }, [user]);
 
   const completedBaseCount = sectors.filter((sector) => completed.includes(sector.id)).length;
-  const totalPoints = completedBaseCount * 500 + (completed.includes('central') ? 2000 : 0);
+  const totalPoints = calculatePoints(completed);
+  const participation = Math.min(100, completed.length * 20);
+  const participants = Math.min(2500, 1300 + completed.length * 240);
 
   const handleAuth = () => {
     const inputName = name.trim();
@@ -154,7 +166,7 @@ function App() {
         setAuthMessage('이미 등록된 요원명입니다.');
         return;
       }
-      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword }]);
+      saveJson(accountsKey, [...accounts, { name: inputName, password: inputPassword, completed: [] }]);
       setAuthTab('login');
       setName('');
       setPassword('');
@@ -167,6 +179,7 @@ function App() {
     }
     sessionStorage.setItem(sessionKey, inputName);
     setUser(inputName);
+    setCompleted(Array.isArray(account.completed) ? account.completed : []);
     setName('');
     setPassword('');
     setScreen(qrSector ? 'game' : 'map');
@@ -207,11 +220,12 @@ function App() {
 
   return (
     <PhoneShell>
-      {screen === 'map' && <MapScreen {...{ user, completed, completedBaseCount, totalPoints, notice, startMission }} />}
+      {screen === 'map' && <MapScreen {...{ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants }} />}
       {screen === 'game' && <GameScreen key={activeSector.id} sector={activeSector} onComplete={() => completeMission(activeSector.id)} onBack={() => setScreen('map')} />}
-      {screen === 'complete' && <MissionCompleteScreen sector={clearedSector} onHome={() => setScreen('map')} />}
+      {screen === 'complete' && <MissionCompleteScreen sector={clearedSector} onDone={() => setScreen(clearedSector?.id === 'central' ? 'certificate' : 'map')} />}
+      {screen === 'certificate' && <CertificateScreen {...{ user, participation, participants }} />}
       {screen === 'profile' && <ProfileScreen {...{ user, completed, totalPoints, resetRecord, logout }} />}
-      {screen === 'leaderboard' && <LeaderboardScreen {...{ user, totalPoints }} />}
+      {screen === 'leaderboard' && <LeaderboardScreen {...{ user, completed }} />}
       {screen === 'badges' && <BadgesScreen completed={completed} />}
       {screen === 'notice' && <NoticeScreen />}
       {screen === 'qr' && <QrScreen />}
@@ -261,7 +275,7 @@ function AuthScreen({ authTab, setAuthTab, name, setName, password, setPassword,
   );
 }
 
-function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, startMission }) {
+function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, startMission, participation, participants }) {
   const finalOpen = sectors.every((sector) => completed.includes(sector.id));
   return (
     <div className="map-view">
@@ -280,6 +294,7 @@ function MapScreen({ user, completed, completedBaseCount, totalPoints, notice, s
         </div>
         <strong>{totalPoints.toLocaleString()} P</strong>
       </section>
+      <ParticipationCard participation={participation} participants={participants} />
       {notice && <div className="toast">✅ {notice}</div>}
       <section className="sea-map">
         <KoreaMissionMap />
@@ -334,6 +349,22 @@ function MissionCard({ sector, locked, done, onStart }) {
   );
 }
 
+function ParticipationCard({ participation, participants }) {
+  const complete = participation >= 100;
+  return (
+    <section className="participation-card">
+      <div>
+        <strong>{complete ? '아치 찾기 성공!' : 'SEA-CRET 참여도'}</strong>
+        <span>{participants.toLocaleString()} / 2,500명 참여</span>
+      </div>
+      <div className="participation-line">
+        <i style={{ width: `${participation}%` }} />
+      </div>
+      <p>{complete ? '모든 미션 참여도가 채워져 아치증 발급이 가능합니다.' : '참여 인원이 차오를수록 SEA-CRET 아치 발견에 가까워집니다.'}</p>
+    </section>
+  );
+}
+
 function GameScreen({ sector, onComplete, onBack }) {
   return (
     <div className="game-view">
@@ -353,7 +384,8 @@ function GameScreen({ sector, onComplete, onBack }) {
   );
 }
 
-function MissionCompleteScreen({ sector, onHome }) {
+function MissionCompleteScreen({ sector, onDone }) {
+  const finalMission = sector?.id === 'central';
   return (
     <div className="complete-view">
       <div className="confetti" aria-hidden="true">
@@ -369,9 +401,32 @@ function MissionCompleteScreen({ sector, onHome }) {
         <h1>미션 클리어!!</h1>
         <img src={sector?.asset || '/assets/central.png'} alt="" />
         <strong>{sector?.mission || '배지 적립'} 성공</strong>
-        <span>배지와 포인트가 기록되었습니다.</span>
-        <button onClick={onHome}><Home size={20} /> 완료</button>
+        <span>{finalMission ? '최종 인증이 완료되었습니다. 아치증 발급을 진행하세요.' : '배지와 포인트가 기록되었습니다.'}</span>
+        <button onClick={onDone}><Home size={20} /> {finalMission ? '아치증 발급 화면으로' : '완료'}</button>
       </article>
+    </div>
+  );
+}
+
+function CertificateScreen({ user, participation, participants }) {
+  const [issued, setIssued] = useState(false);
+  return (
+    <div className="certificate-view">
+      <header className="certificate-hero">
+        <span>FINAL CLEAR</span>
+        <h1>SEA-CRET 아치증 발급받기!</h1>
+        <p>{user} 요원님의 최종 SEA-CRET GUARD 인증이 준비되었습니다.</p>
+      </header>
+      <ParticipationCard participation={participation} participants={participants} />
+      {!issued ? (
+        <button className="issue-button" onClick={() => setIssued(true)}>SEA-CRET 아치증 발급받기!</button>
+      ) : (
+        <section className="issued-card">
+          <img src="/assets/archi-certificate.png" alt="SEA-CRET 아치증" />
+          <strong>아치증 발급 완료!</strong>
+          <a href="/assets/archi-certificate.png" download="SEA-CRET-ARCHI-CERTIFICATE.png">아치증 저장하기</a>
+        </section>
+      )}
     </div>
   );
 }
@@ -409,6 +464,12 @@ function EastWhackGame({ onComplete }) {
     }
   }, [score, done, onComplete, target]);
 
+  const handleBreadClick = (hole) => {
+    if (time === 0 || done || hole.type !== 'black') return;
+    setScore((value) => value + 1);
+    setHoles(createBreads());
+  };
+
   return (
     <div className="mini-game bread-game">
       <GameStats time={time} current={score} target={target} label="검은빵" />
@@ -417,10 +478,12 @@ function EastWhackGame({ onComplete }) {
           <button
             key={hole.id}
             className={`bread-hole ${hole.up ? 'up' : ''}`}
-            onClick={() => time > 0 && hole.type === 'black' && hole.up && setScore((value) => value + 1)}
+            onClick={() => handleBreadClick(hole)}
             disabled={done || time === 0}
           >
-            <span className={`bread ${hole.type}`}>{hole.type === 'black' ? '●' : '○'}</span>
+            <span className={`bread ${hole.type}`}>
+              <img src={hole.image} alt={hole.type === 'black' ? '검은빵' : '일반빵'} />
+            </span>
           </button>
         ))}
       </div>
@@ -430,10 +493,12 @@ function EastWhackGame({ onComplete }) {
 }
 
 function createBreads() {
+  const blackIndex = Math.floor(Math.random() * 9);
   return Array.from({ length: 9 }, (_, index) => ({
     id: `${index}-${Math.random()}`,
-    up: Math.random() > 0.35,
-    type: Math.random() > 0.52 ? 'black' : 'white',
+    up: true,
+    type: index === blackIndex ? 'black' : index % 2 === 0 ? 'orange' : 'cream',
+    image: index === blackIndex ? '/assets/bread-black.png' : index % 2 === 0 ? '/assets/bread-orange.png' : '/assets/bread-cream.png',
   }));
 }
 
@@ -764,16 +829,32 @@ function ProfileScreen({ user, completed, totalPoints, resetRecord, logout }) {
   );
 }
 
-function LeaderboardScreen({ user, totalPoints }) {
+function LeaderboardScreen({ user, completed }) {
+  const accounts = readJson(accountsKey, []);
+  const rows = accounts
+    .map((account) => {
+      const missions = account.name === user ? completed : Array.isArray(account.completed) ? account.completed : [];
+      return {
+        name: account.name,
+        points: calculatePoints(missions),
+        missionCount: missions.length,
+        current: account.name === user,
+      };
+    })
+    .sort((a, b) => b.points - a.points || b.missionCount - a.missionCount || a.name.localeCompare(b.name, 'ko'));
+
   return (
     <div className="simple-view">
       <h1><Trophy /> 랭킹</h1>
-      {[
-        ['아치대장', 5200],
-        [user, totalPoints],
-        ['바다수호', 2600],
-        ['해양지킴', 1800],
-      ].sort((a, b) => b[1] - a[1]).map((row, index) => <div className="rank-row" key={row[0]}><strong>{index + 1}</strong><span>{row[0]}</span><b>{row[1].toLocaleString()} P</b></div>)}
+      <p className="leaderboard-note">가입한 모든 요원의 미션 기록을 기준으로 표시됩니다.</p>
+      {rows.length === 0 && <div className="retry-hint">아직 가입한 요원이 없습니다.</div>}
+      {rows.map((row, index) => (
+        <div className={`rank-row ${row.current ? 'current' : ''}`} key={row.name}>
+          <strong>{index + 1}</strong>
+          <span>{row.name}{row.current ? ' 요원' : ''}<small>{row.missionCount}/5 미션 완료</small></span>
+          <b>{row.points.toLocaleString()} P</b>
+        </div>
+      ))}
     </div>
   );
 }
