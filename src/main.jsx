@@ -72,8 +72,8 @@ const finalSector = {
   label: '중부',
   office: '중부지방청',
   title: 'SEA-CRET GUARD 전직',
-  mission: '스크래치 최종 인증',
-  description: '검은 막을 손으로 지워 시크릿가드 아치를 공개하세요.',
+  mission: 'OX 최종관문',
+  description: '시크릿가드가 되기 위한 최종관문! OX 퀴즈 3문제 중 2문제를 맞히세요.',
   color: '#0ea5e9',
   asset: '/assets/central.png',
   position: 'card-central',
@@ -157,6 +157,16 @@ function App() {
   const [notice, setNotice] = useState(qrSector ? `${qrSector.office} QR로 접속했습니다.` : '');
   const [remoteRows, setRemoteRows] = useState([]);
   const [remoteError, setRemoteError] = useState('');
+  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('sea-cret-intro-seen'));
+
+  useEffect(() => {
+    if (!showIntro) return undefined;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem('sea-cret-intro-seen', '1');
+      setShowIntro(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [showIntro]);
 
   const refreshLeaderboard = async () => {
     try {
@@ -285,6 +295,10 @@ function App() {
     setScreen('map');
   };
 
+  if (showIntro) {
+    return <PhoneShell><IntroScreen /></PhoneShell>;
+  }
+
   if (!user) {
     return <PhoneShell><AuthScreen {...{ authTab, setAuthTab, name, setName, password, setPassword, showPassword, setShowPassword, authMessage, handleAuth }} /></PhoneShell>;
   }
@@ -318,6 +332,17 @@ function PhoneShell({ children }) {
         {children}
       </section>
     </main>
+  );
+}
+
+function IntroScreen() {
+  return (
+    <div className="intro-screen">
+      <p className="intro-line line-1">세상의 이치</p>
+      <p className="intro-line line-2">해경의 가치</p>
+      <p className="intro-line line-3">언제나 같이.</p>
+      <h1 className="intro-line line-4">바다를 지키는 시크릿 가드, 해양경찰청.</h1>
+    </div>
   );
 }
 
@@ -468,7 +493,7 @@ function GameScreen({ sector, onComplete, onBack }) {
       {sector.id === 'west' && <WestHiddenGame onComplete={onComplete} />}
       {sector.id === 'south' && <SouthPuzzleGame onComplete={onComplete} />}
       {sector.id === 'jeju' && <JejuCatchGame onComplete={onComplete} />}
-      {sector.id === 'central' && <CentralScratchGame onComplete={onComplete} />}
+      {sector.id === 'central' && <CentralOxQuizGame onComplete={onComplete} />}
     </div>
   );
 }
@@ -830,71 +855,134 @@ function JejuCatchGame({ onComplete }) {
   );
 }
 
-function CentralScratchGame({ onComplete }) {
-  const canvasRef = useRef(null);
-  const [erased, setErased] = useState(0);
-  const [complete, setComplete] = useState(false);
-  const drawingRef = useRef(false);
+const centralQuizBank = [
+  {
+    id: 1,
+    question: '2023년, 필리핀 중부 해역에서 발생한 기름 유출 사고 당시 대한민국 최초로 해외에 긴급방제팀을 파견한 것은 해양경찰청이다.',
+    answer: 'O',
+    explanation: '맞습니다. 2023년 필리핀 민도로 기름유출 사고 당시 대한민국 해양경찰청은 우리나라 최초로 해외 긴급방제팀을 파견했습니다. 이는 첫 해외 해양오염 방제 지원 사례였습니다.',
+  },
+  {
+    id: 2,
+    question: '해양경찰은 불법 조업 어선 단속 시, 증거 확보와 법 집행의 정당성을 입증하기 위해 대원들의 헬멧 등에 장착된 바디캠을 활용한다.',
+    answer: 'O',
+    explanation: '맞습니다. 해양경찰은 불법조업 어선 단속 등 법집행 과정에서 바디캠을 활용하여 증거 확보, 법집행의 적법성 확인, 대원 보호에 활용하고 있습니다.',
+  },
+  {
+    id: 3,
+    question: '해양경찰은 해상 사고 발생 시 인명 구조 임무만 수행하며, 해상 범죄 수사나 마약 단속 업무는 경찰청에 모두 인계한다.',
+    answer: 'X',
+    explanation: '틀렸습니다. 해양경찰은 인명구조뿐만 아니라 해상 범죄 수사, 마약 밀수 단속, 불법조업 단속, 해양환경 보호 등의 업무도 직접 수행합니다.',
+  },
+  {
+    id: 4,
+    question: '해양경찰은 함정뿐만 아니라 헬기 및 고정익 항공기를 운용하여 먼 바다의 실종자 수색과 응급환자 이송 임무를 수행한다.',
+    answer: 'O',
+    explanation: '맞습니다. 해양경찰은 함정뿐 아니라 헬기와 고정익 항공기를 운용하여 원거리 해상 수색, 응급환자 이송, 해상 감시 등의 임무를 수행합니다.',
+  },
+  {
+    id: 5,
+    question: '바디캠 영상에서 불법 중국어선 단속을 수행하는 대원들은 저항하는 선원들을 제압하기 위해 섬광폭음탄 등의 비살상 무기를 사용하기도 한다.',
+    answer: 'O',
+    explanation: '맞습니다. 불법 중국어선 단속 과정에서 필요 시 섬광폭음탄, 테이저 등 비살상 장비를 사용하여 저항하는 선원을 제압하기도 합니다.',
+  },
+];
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#050505';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#1a1a1a';
-    for (let i = 0; i < 60; i += 1) {
-      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 8, 8);
+function CentralOxQuizGame({ onComplete }) {
+  const target = 2;
+  const total = 3;
+  const [questions, setQuestions] = useState(() => shuffle(centralQuizBank).slice(0, total));
+  const [index, setIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [answered, setAnswered] = useState([]);
+  const [showHint, setShowHint] = useState(false);
+  const [result, setResult] = useState(null);
+  const [passed, setPassed] = useState(false);
+  const current = questions[index];
+  const failed = answered.length >= total && score < target;
+
+  const resetQuiz = () => {
+    setQuestions(shuffle(centralQuizBank).slice(0, total));
+    setIndex(0);
+    setScore(0);
+    setAnswered([]);
+    setShowHint(false);
+    setResult(null);
+    setPassed(false);
+  };
+
+  const chooseAnswer = (choice) => {
+    if (!current || passed || result) return;
+    const correct = choice === current.answer;
+    const nextScore = score + (correct ? 1 : 0);
+    const nextAnswered = [...answered, { id: current.id, correct, choice }];
+    setScore(nextScore);
+    setAnswered(nextAnswered);
+    setResult(correct ? '정답입니다!' : '아쉽지만 오답입니다.');
+    setShowHint(true);
+
+    if (nextScore >= target) {
+      setPassed(true);
+      setTimeout(onComplete, 900);
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    if (erased > 52 && !complete) {
-      setComplete(true);
-      setTimeout(onComplete, 600);
+    if (nextAnswered.length < total) {
+      setTimeout(() => {
+        setIndex((value) => value + 1);
+        setResult(null);
+        setShowHint(false);
+      }, 900);
     }
-  }, [erased, complete, onComplete]);
-
-  const scratch = (event) => {
-    if (!drawingRef.current && event.type !== 'pointerdown') return;
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
-    const ctx = canvas.getContext('2d');
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 22, 0, Math.PI * 2);
-    ctx.fill();
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let transparent = 0;
-    for (let i = 3; i < data.length; i += 16) if (data[i] < 50) transparent += 1;
-    setErased(Math.round((transparent / (data.length / 16)) * 100));
   };
 
   return (
-    <div className="mini-game scratch-game">
-      <div className="scratch-card">
-        <h2>시크릿가드 전직 성공!!</h2>
-        <img src="/assets/central.png" alt="시크릿가드 아치" />
-        <p>검은 막을 손가락으로 문질러 아치를 공개하세요.</p>
-        <canvas
-          ref={canvasRef}
-          width="320"
-          height="430"
-          onPointerDown={(event) => { drawingRef.current = true; scratch(event); }}
-          onPointerMove={scratch}
-          onPointerUp={() => { drawingRef.current = false; }}
-          onPointerLeave={() => { drawingRef.current = false; }}
-        />
+    <div className="mini-game ox-game">
+      <section className="ox-hero">
+        <img src="/assets/central.png" alt="중부 아치" />
+        <div>
+          <span>FINAL GATE</span>
+          <h2>시크릿가드가 되기 위한 최종관문!</h2>
+          <p>5문제 중 랜덤 3문제 출제, 2문제 이상 맞히면 합격입니다.</p>
+        </div>
+      </section>
+
+      <GameStats time={`문항 ${index + 1}/${total}`} current={score} target={target} label="정답" />
+
+      <article className="ox-card">
+        <div className="ox-count">문제 {index + 1}</div>
+        <p>{current.question}</p>
+        <div className="ox-actions">
+          <button className="ox-button yes" onClick={() => chooseAnswer('O')} disabled={passed || Boolean(result)}>O</button>
+          <button className="ox-button no" onClick={() => chooseAnswer('X')} disabled={passed || Boolean(result)}>X</button>
+        </div>
+        <button className="hint-button" onClick={() => setShowHint((value) => !value)}>
+          힌트 {showHint ? '닫기' : '보기'}
+        </button>
+        {result && <strong className={`ox-result ${result.includes('정답') ? 'correct' : 'wrong'}`}>{result}</strong>}
+        {showHint && <div className="ox-hint">{current.explanation}</div>}
+      </article>
+
+      <div className="ox-dots">
+        {questions.map((question, dotIndex) => {
+          const item = answered.find((answer) => answer.id === question.id);
+          return <span key={question.id} className={`${dotIndex === index ? 'active' : ''} ${item?.correct ? 'correct' : ''} ${item && !item.correct ? 'wrong' : ''}`} />;
+        })}
       </div>
-      <div className="scratch-meter"><i style={{ width: `${erased}%` }} /></div>
-      <strong>{erased}% 공개</strong>
+
+      {passed && <div className="message">최종관문 합격! SEA-CRET GUARD 인증으로 이동합니다.</div>}
+      {failed && (
+        <div className="retry-hint">
+          최종관문 재도전이 필요합니다.
+          <button onClick={resetQuiz}>다시 도전</button>
+        </div>
+      )}
     </div>
   );
 }
 
 function GameStats({ time, current, target, label }) {
-  return <div className="game-stats"><span>⏱ {time}s</span><strong>{current}/{target}</strong><span>{label}</span></div>;
+  return <div className="game-stats"><span>{typeof time === 'number' ? `⏱ ${time}s` : time}</span><strong>{current}/{target}</strong><span>{label}</span></div>;
 }
 
 function RetryHint() {
