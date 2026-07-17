@@ -23,9 +23,9 @@ const sectors = [
     id: 'east',
     label: '동해',
     office: '동해지방청',
-    title: '소금빵 튕기기 작전',
-    mission: '소금빵 튕기기',
-    description: '선박을 손가락으로 움직여 내려오는 소금빵을 튕기세요. 1번만 튕겨도 배지가 지급됩니다.',
+    title: '동해 틀린그림 찾기',
+    mission: '틀린 그림 찾기',
+    description: '양쪽 캐릭터를 비교해 오른쪽에만 다른 4곳을 10초 안에 찾으세요.',
     color: '#f05a28',
     asset: '/assets/east.png',
     position: 'card-east',
@@ -35,9 +35,9 @@ const sectors = [
     id: 'west',
     label: '서해',
     office: '서해지방청',
-    title: '서해 틀린그림 찾기',
-    mission: '틀린 그림 찾기',
-    description: '양쪽 캐릭터를 비교해 오른쪽에만 다른 3곳을 10초 안에 찾으세요.',
+    title: '소금빵 튕기기 작전',
+    mission: '소금빵 튕기기',
+    description: '선박을 손가락으로 움직여 내려오는 소금빵을 튕기세요. 1번만 튕겨도 배지가 지급됩니다.',
     color: '#1d4f9a',
     asset: '/assets/west.png',
     position: 'card-west',
@@ -331,7 +331,7 @@ function App() {
   };
 
   const completeMission = (sectorId, result = {}) => {
-    if (sectorId === 'east') {
+    if (sectorId === 'west') {
       setSaltScore((current) => Math.max(current, Number(result.saltScore || 0)));
     }
     setCompleted((current) => Array.from(new Set([...current, sectorId])));
@@ -568,8 +568,8 @@ function GameScreen({ sector, onComplete, onBack }) {
           <h1>{sector.title}</h1>
         </div>
       </header>
-      {sector.id === 'east' && <EastSaltBreadGame onComplete={onComplete} />}
-      {sector.id === 'west' && <WestHiddenGame onComplete={onComplete} />}
+      {sector.id === 'east' && <EastHiddenGame onComplete={onComplete} />}
+      {sector.id === 'west' && <SaltBreadGame onComplete={onComplete} />}
       {sector.id === 'south' && <SouthPuzzleGame onComplete={onComplete} />}
       {sector.id === 'jeju' && <JejuCatchGame onComplete={onComplete} />}
       {sector.id === 'central' && <CentralOxQuizGame onComplete={onComplete} />}
@@ -631,7 +631,7 @@ function CertificateScreen({ user, participation, participants, participantGoal 
   );
 }
 
-function EastSaltBreadGame({ onComplete }) {
+function SaltBreadGame({ onComplete }) {
   const areaRef = useRef(null);
   const [shipX, setShipX] = useState(50);
   const [bread, setBread] = useState({ x: 48, y: 12, vx: 1.05, vy: 1.35 });
@@ -715,7 +715,7 @@ function EastSaltBreadGame({ onComplete }) {
   return (
     <div className="mini-game salt-game">
       <GameStats time="튕기기" current={score} target={250} label="점" />
-      <p className="salt-guide">작은 선박을 꾹 누른 채 좌우로 움직여 소금빵을 튕기세요. 1번만 튕겨도 동해 배지를 받을 수 있습니다.</p>
+      <p className="salt-guide">작은 선박을 꾹 누른 채 좌우로 움직여 소금빵을 튕기세요. 1번만 튕겨도 서해 배지를 받을 수 있습니다.</p>
       <div
         ref={areaRef}
         className="salt-playfield"
@@ -750,15 +750,15 @@ function createBreads() {
   }));
 }
 
-function WestHiddenGame({ onComplete }) {
+function EastHiddenGame({ onComplete }) {
   const target = 4;
   const [time, setTime] = useState(10);
   const [found, setFound] = useState([]);
   const differences = useMemo(() => [
-    { id: 'basket-hand', label: '보라색 손', x: 76, y: 65, size: 'hand-zone' },
-    { id: 'cheek', label: '빨간 볼터치', x: 50, y: 35, size: 'cheek-zone' },
-    { id: 'name-tag', label: '파란 명찰', x: 30, y: 57, size: 'tag-zone' },
-    { id: 'left-hand', label: '왼쪽 손', x: 13, y: 35, size: 'left-hand-zone' },
+    { id: 'hat-mark', label: '모자 배지 색', x: 48, y: 18, size: 'east-hat-zone', visual: 'east-hat-diff' },
+    { id: 'cheek', label: '빨간 볼터치', x: 49, y: 35, size: 'cheek-zone', visual: 'east-cheek-diff' },
+    { id: 'whistle', label: '노란 호루라기', x: 36, y: 55, size: 'east-whistle-zone', visual: 'east-whistle-diff' },
+    { id: 'board-stripe', label: '주황 보드 줄무늬', x: 49, y: 79, size: 'east-board-zone', visual: 'east-board-diff' },
   ], []);
   const correctFound = differences.filter((object) => found.includes(object.id)).length;
 
@@ -787,13 +787,13 @@ function WestHiddenGame({ onComplete }) {
         <article className="spot-panel">
           <span>기준</span>
           <div className="spot-image-wrap">
-            <img src="/assets/west.png" alt="기준 서해 아치" />
+            <img src="/assets/east.png" alt="기준 동해 아치" />
           </div>
         </article>
         <article className="spot-panel spot-target">
           <span>찾기</span>
-          <div className="spot-image-wrap">
-            <img src="/assets/west-diff.png" alt="비교 서해 아치" />
+          <div className="spot-image-wrap east-spot-wrap">
+            <img src="/assets/east.png" alt="비교 동해 아치" />
             {differences.map((object) => (
               <button
                 key={object.id}
@@ -802,6 +802,7 @@ function WestHiddenGame({ onComplete }) {
                 onClick={() => time > 0 && setFound((current) => Array.from(new Set([...current, object.id])))}
                 aria-label={object.label}
               >
+                <i className={object.visual} />
                 {found.includes(object.id) && <span className="found-ring" />}
               </button>
             ))}
